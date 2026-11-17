@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model user {
+  id             Int                 @id @default(autoincrement())
+  name           String              @db.VarChar(150)
+  email          String              @unique
+  password_hash  String              @db.VarChar(255)
+  status         user_status         @default(active)
+  created_at     DateTime            @default(now())
+  deactivated_at DateTime?
+  collectives    collective[]        @relation("CollectiveCreator")
+  memberships    collective_member[] @relation("UserMemberships")
+  tasks          task[]              @relation("TaskCreator")
+
+  @@map("user")
+}
+
+model collective {
+  id          Int                 @id @default(autoincrement())
+  name        String              @db.VarChar(150)
+  description String?             @db.Text
+  created_by  Int
+  created_at  DateTime            @default(now())
+  creator     user                @relation("CollectiveCreator", fields: [created_by], references: [id])
+  members     collective_member[]
+  tasks       task[]
+
+  @@index([created_by])
+  @@map("collective")
+}
+
+model collective_member {
+  id            Int             @id @default(autoincrement())
+  user_id       Int
+  collective_id Int
+  role          member_role     @default(participant)
+  status        member_status   @default(active)
+  joined_at     DateTime        @default(now())
+  left_at       DateTime?
+  collective    collective      @relation(fields: [collective_id], references: [id])
+  user          user            @relation("UserMemberships", fields: [user_id], references: [id])
+  assignments   task_assignee[]
+
+  @@unique([user_id, collective_id])
+  @@index([collective_id, status])
+  @@map("collective_member")
+}
+
+model task {
+  id            Int             @id @default(autoincrement())
+  collective_id Int
+  created_by    Int
+  title         String          @db.VarChar(200)
+  description   String?         @db.Text
+  status        task_status     @default(pending)
+  priority      task_priority   @default(medium)
+  due_date      DateTime?
+  created_at    DateTime        @default(now())
+  collective    collective      @relation(fields: [collective_id], references: [id])
+  creator       user            @relation("TaskCreator", fields: [created_by], references: [id])
+  assignees     task_assignee[]
+
+  @@index([collective_id, status])
+  @@index([created_by])
+  @@index([due_date])
+  @@map("task")
+}
+
+model task_assignee {
+  task_id              Int
+  collective_member_id Int
+  assigned_at          DateTime          @default(now())
+  collective_member    collective_member @relation(fields: [collective_member_id], references: [id])
+  task                 task              @relation(fields: [task_id], references: [id], onDelete: Cascade)
+
+  @@id([task_id, collective_member_id])
+  @@index([collective_member_id])
+  @@map("task_assignee")
+}
+
+enum user_status {
+  active
+  inactive
+}
+
+enum member_role {
+  organizer
+  participant
+}
+
+enum member_status {
+  active
+  left
+}
+
+enum task_status {
+  pending
+  in_progress
+  completed
+  cancelled
+}
+
+enum task_priority {
+  low
+  medium
+  high
+}
