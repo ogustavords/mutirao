@@ -6,6 +6,7 @@ import {
   listUsers,
   getUserById,
   updateUser,
+  deactivateUser,
 } from '../services/user.service.js'
 
 export async function createUserController(
@@ -231,6 +232,45 @@ export async function updateUserController(
     return res.status(500).json({
       status: 'error',
       message: 'Não foi possível atualizar o usuário.',
+    })
+  }
+  
+}
+
+export async function deactivateUserController(
+  req: Request,
+  res: Response
+) {
+  try {
+    const id = Number(req.params.id)
+
+    if (!Number.isInteger(id) || id < 1) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'ID inválido.',
+      })
+    }
+
+    const user = await deactivateUser(id)
+
+    if (!user) {
+      return res.status(404).json({
+        status: 'error',
+        message: 'Usuário não encontrado.',
+      })
+    }
+
+    return res.status(200).json({
+      status: 'ok',
+      message: 'Usuário desativado com sucesso!',
+      user,
+    })
+  } catch (error) {
+    console.error('Erro ao desativar usuário:', error)
+
+    return res.status(500).json({
+      status: 'error',
+      message: 'Não foi possível desativar o usuário.',
     })
   }
 }

@@ -125,3 +125,33 @@ export async function updateUser(id: number, data: UpdateUserData) {
     throw error
   }
 }
+
+export async function deactivateUser(id: number) {
+  try {
+    return await prisma.user.update({
+      where: {
+        id,
+      },
+      data: {
+        status: 'inactive',
+        deactivated_at: new Date(),
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        status: true,
+        deactivated_at: true,
+      },
+    })
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === 'P2025'
+    ) {
+      return null
+    }
+
+    throw error
+  }
+}

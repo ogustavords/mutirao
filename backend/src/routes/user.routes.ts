@@ -6,13 +6,20 @@ import {
   listUsersController,
   getUserByIdController,
   updateUserController,
+  deactivateUserController,
 } from '../controllers/user.controller.js'
+
+import { authenticateToken } from '../middlewares/auth.middleware.js'
 
 const router = Router()
 
-router.get('/', listUsersController)
-router.get('/:id', getUserByIdController)
+// rotas públicas
 router.post('/', createUserController)
-router.patch('/:id', updateUserController)
+
+// rotas protegidas
+router.get('/', authenticateToken, listUsersController)
+router.get('/:id', authenticateToken, getUserByIdController)
+router.patch('/:id', authenticateToken, updateUserController)
+router.delete('/:id', authenticateToken, deactivateUserController)
 
 export default router
